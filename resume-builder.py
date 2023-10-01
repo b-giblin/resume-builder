@@ -1,57 +1,60 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox
+from tkinter import ttk, messagebox
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
 class ResumeApp:
-
     def __init__(self, root):
         self.root = root
         self.root.title("Resume Generator")
-
         self.create_widgets()
 
     def create_widgets(self):
-        self.label = tk.Label(self.root, text="Choose a Template Style:")
-        self.label.pack(pady=20)
+        self.name_label = ttk.Label(self.root, text="Name:")
+        self.name_label.grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        self.name_entry = ttk.Entry(self.root)
+        self.name_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        # Buttons for different styles
-        self.style1_btn = tk.Button(self.root, text="Style 1", command=self.generate_style1)
-        self.style1_btn.pack(pady=10)
+        self.email_label = ttk.Label(self.root, text="Email:")
+        self.email_label.grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        self.email_entry = ttk.Entry(self.root)
+        self.email_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        self.style2_btn = tk.Button(self.root, text="Style 2", command=self.generate_style2)
-        self.style2_btn.pack(pady=10)
+        self.summary_label = ttk.Label(self.root, text="Summary:")
+        self.summary_label.grid(row=2, column=0, sticky="w", padx=5, pady=5)
+        self.summary_entry = tk.Text(self.root, height=5, width=40)
+        self.summary_entry.grid(row=2, column=1, padx=5, pady=5)
+
+        self.generate_btn = ttk.Button(self.root, text="Generate Resume", command=self.generate_resume)
+        self.generate_btn.grid(row=4, column=0, columnspan=2, pady=20)
 
     def collect_user_input(self):
-        user_data = {}
-        user_data['name'] = simpledialog.askstring("Input", "Enter your name:")
-        user_data['address'] = simpledialog.askstring("Input", "Enter your address:")
-        user_data['email'] = simpledialog.askstring("Input", "Enter your email:")
-        return user_data
+        return {
+            'name': self.name_entry.get(),
+            'email': self.email_entry.get(),
+            'summary': self.summary_entry.get(1.0, "end-1c")
+        }
 
-    def generate_style1(self):
+    def generate_resume(self):
         data = self.collect_user_input()
-        c = canvas.Canvas("resume_style1.pdf", pagesize=letter)
-        width, height = letter
+        self.create_pdf(data)
+        messagebox.showinfo("Info", "Resume generated as 'resume.pdf'")
 
-        c.drawString(100, height - 100, f"Name: {data['name']}")
-        c.drawString(100, height - 130, f"Address: {data['address']}")
-        c.drawString(100, height - 160, f"Email: {data['email']}")
+    def create_pdf(self, data):
+        doc = SimpleDocTemplate("resume.pdf", pagesize=letter)
+        story = []
 
-        c.save()
-        messagebox.showinfo("Info", "Resume generated as 'resume_style1.pdf'")
+        styles = getSampleStyleSheet()
 
-    def generate_style2(self):
-        data = self.collect_user_input()
-        c = canvas.Canvas("resume_style2.pdf", pagesize=letter)
-        width, height = letter
+        name = Paragraph(f"<font size=18><b>{data['name']}</b></font>", styles['Heading1'])
+        email = Paragraph(data['email'], styles['BodyText'])
+        summary = Paragraph(data['summary'], styles['BodyText'])
 
-        c.drawString(100, height - 100, f"==== {data['name']} ====")
-        c.drawString(100, height - 130, f"[Address] {data['address']}")
-        c.drawString(100, height - 160, f"[Email] {data['email']}")
+        story.extend([name, Spacer(1, 0.2 * inch), email, Spacer(1, 0.5 * inch), summary])
 
-        c.save()
-        messagebox.showinfo("Info", "Resume generated as 'resume_style2.pdf'")
+        doc.build(story)
 
 if __name__ == "__main__":
     root = tk.Tk()
